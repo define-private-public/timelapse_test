@@ -34,8 +34,10 @@ int main(int argc, char *argv[]) {
 
 			cvShowImage("result", iplImg);
 
-			if (waitKey(10) >= 0)
+			if (waitKey(10) >= 0) {
+				imwrite("camera_capture.jpg", frame);
 				cvReleaseCapture(&capture);
+			}
 		}
 
 		waitKey(0);

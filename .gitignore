@@ -23,3 +23,7 @@ a.out
 
 # Text files
 *.sw*
+
+# Images
+*.png
+*.jpg
