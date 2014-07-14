@@ -2,48 +2,44 @@
 #include <opencv2/opencv.hpp>
 
 #include <iostream>
-#include <cstdio>
+#include <unistd.h>
 
 using namespace std;
-using namespace cv;
 
 
 int main(int argc, char *argv[]) {
-	CvCapture *capture = NULL;
-	Mat frame, frameCopy, image;
+	cv::VideoCapture capture;
+	cv::Mat image;
+	int samples, maxSamples = 50;
 
-	capture = cvCaptureFromCAM(0);	// Default == 0
-	if (!capture)
-		cout << "No camera detected" << endl;
-	
-	cvNamedWindow("result", 1);
+	// Need a filename
+	if (argc < 2)
+		return 0;
 
-	if (capture) {
+	capture.open(0);	// Default camera
+
+
+	if (capture.isOpened()) {
 		cout << "In capture ..." << endl;
-		while (true) {
-			IplImage *iplImg = cvQueryFrame(capture);
-			frame = iplImg;
-
-			if (frame.empty())
-				break;
-
-//			if (iplImg->origin == IPL_ORIGIN_TL)
-//				frame.copyTo(frameCopy);
-//			else
-//				flip(frame, frameCopy, 0);
-
-			cvShowImage("result", iplImg);
-
-			if (waitKey(10) >= 0) {
-				imwrite("camera_capture.jpg", frame);
-				cvReleaseCapture(&capture);
-			}
+	
+		// let the camera warm up with a few samples
+		while (samples < maxSamples) {
+			capture.read(image);
+			image.release();
+			samples++;
 		}
 
-		waitKey(0);
+		capture.read(image);
+		if (!image.empty()) {
+			cv::imwrite(argv[1], image);
+			cout << "Saving image..." << endl;
+		}
 	}
 
-	cvDestroyWindow("result");
+	// cleanup
+	capture.release();
+	image.release();
+
 
 	return 0;
 }

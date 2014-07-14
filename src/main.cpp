@@ -6,6 +6,7 @@
 #include <cstdlib>
 #include <cstdio>
 #include <cstring>
+#include <ctime>
 #include <csignal>
 #include <cerrno>
 
@@ -121,7 +122,9 @@ int main(int argc, char *argv[]) {
 		exit(1);
 	}
 
-
+	
+	// TODO: take a picture and make sure there is enough space
+	// TODO: add all signal handlers
 
 
 	
