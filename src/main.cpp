@@ -13,6 +13,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/statvfs.h>
 
 
 // Definitions
@@ -26,6 +27,7 @@
 #define RWX_PERMS 0777
 #define DEFAULT_CAMERA 0
 #define TEST_IMAGE_FILENAME "test.jpg"
+#define ESTIMATION_MODIFIER 1.15
 
 
 // Namespaces
@@ -43,10 +45,12 @@ using namespace std;
 int main(int argc, char *argv[]) {
 	// Variables needed
 	struct stat st;
+	struct statvfs vfs;
 	unsigned long timeout, duration;
 	unsigned short durDays, durHours, durMinutes, durSeconds;
 	const char *destDir;
-	unsigned int testImageSize;
+	unsigned int testImageSize, numPictures;
+	unsigned long long diskSpaceFree, estimatedTotalSize;
 	char *savedImagePath= NULL;
 	int n;
 	cv::VideoCapture camera;
@@ -89,6 +93,15 @@ int main(int argc, char *argv[]) {
 		cerr << "Timelapse duration of 0 total seconds.  Are you serious?" << endl;
 		exit(1);
 	}
+
+	// How many seconds long is the who thing?
+	duration = durSeconds;
+	duration += (durMinutes * 60);
+	duration += (durHours * 60 * 60);
+	duration += (durDays * 60 * 60 * 24);
+
+	// Also how many pictures will be taken?
+	numPictures = duration / timeout;
 
 	// Check the destination directory
 	destDir = argv[ARG_DESTINATION];
@@ -169,6 +182,24 @@ int main(int argc, char *argv[]) {
 		exit(1);
 	}
 
+	// Make an estimation on how much disk space this will take up, and check if we have enough
+	estimatedTotalSize = (unsigned long long)((float)numPictures * (float)testImageSize * ESTIMATION_MODIFIER);
+
+	n = statvfs(destDir, &vfs);
+	if (n == -1) {
+		// Hit a snag for some reason
+		cerr << "Was not able to get amount of free disk space, reason(" << errno << "): " << strerror(errno) << endl;
+		diskSpaceFree = 0;
+	} else
+		diskSpaceFree = vfs.f_bsize * vfs.f_bfree;	// Success, multipy free blocks times block size
+
+	// If they don't have enough space, display a warning
+	if (estimatedTotalSize > diskSpaceFree) {
+		cout << "WARNING: You might not have enough free disk space for the timelapse." << endl;
+		cout << "         You need about " << (estimatedTotalSize - diskSpaceFree) << " more bytes of free space." << endl;
+	}
+
+
 	
 	// TODO take a picture and estimate if there is enough space
 	// 		Let the user decice to continue or not
@@ -185,6 +216,9 @@ int main(int argc, char *argv[]) {
 	cout << "Seconds: " << durSeconds << endl;
 	cout << "Destination Directory: " << destDir << endl;
 	cout << "Test image size (bytes): " << testImageSize << endl;
+	cout << "A total of " << numPictures << " pictures will be taken over " << duration << " seconds." << endl;
+	cout << "This might take up around " << estimatedTotalSize << " bytes of disk space." << endl;
+//	cout << "You have " << diskSpaceFree << " bytes of disk space free." << endl;
 
 	
 	delete savedImagePath;
