@@ -195,17 +195,17 @@ int main(int argc, char *argv[]) {
 
 	// If they don't have enough space, display a warning
 	if (estimatedTotalSize > diskSpaceFree) {
+		// TODO Add something here asking the user if they want to contiue
 		cout << "WARNING: You might not have enough free disk space for the timelapse." << endl;
 		cout << "         You need about " << (estimatedTotalSize - diskSpaceFree) << " more bytes of free space." << endl;
 	}
 
 
 	
-	// TODO take a picture and estimate if there is enough space
-	// 		Let the user decice to continue or not
 	// TODO add all signal handlers
 	// TODO Ask for confirmation before starting
 	//      remove directory he says no.
+	// TODO print statistics at end of capturing
 
 	
 	// Stats
