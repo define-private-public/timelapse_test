@@ -76,6 +76,7 @@ static void alarmHandler(int sig) {
 		// Save the image
 		sprintf(savedImagePath, "%s/%lli.jpg", destDir, (long long)captureTime);
 		imageWritten = cv::imwrite(savedImagePath, image);
+		image.release();
 
 		// Double check
 		if (imageWritten)
@@ -306,8 +307,9 @@ int main(int argc, char *argv[]) {
 
 		// Have to do this because of my webcamera, there will be dark photos unless reads are constantly made
 		while (numTaken < numPictures) {
-			camera.read(image);
-			image.release();
+//			camera.read(image);
+//			image.release();
+			usleep(10);		// Take a little nap
 		}
 	} else {
 		cerr << "Was not able to open the camera during the capture phase." << endl;
