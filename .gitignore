@@ -29,3 +29,9 @@ capture_timelapse
 *.png
 *.jpg
 *.raw
+
+# Moves
+*.mp4
+*.mpg
+*.webm
+*.avi
