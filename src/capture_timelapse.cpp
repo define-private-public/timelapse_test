@@ -38,6 +38,7 @@ using namespace std;
 static unsigned long timeout, duration;
 static const char *destDir;
 static unsigned int testImageSize, numPictures, numTaken;
+static unsigned short durDays, durHours, durMinutes, durSeconds;
 static char *savedImagePath= NULL;
 static cv::VideoCapture camera;
 static cv::Mat image;
@@ -118,7 +119,6 @@ int main(int argc, char *argv[]) {
 	struct stat st;
 	struct statvfs vfs;
 	struct sigaction shutdownAction, alarmAction;
-	unsigned short durDays, durHours, durMinutes, durSeconds;
 	unsigned long long diskSpaceFree, estimatedTotalSize;
 	int n;
 
@@ -260,17 +260,18 @@ int main(int argc, char *argv[]) {
 		diskSpaceFree = vfs.f_bsize * vfs.f_bfree;	// Success, multipy free blocks times block size
 
 
-	// Stats
-	cout << "Timeout (seconds): " << timeout << endl;
-	cout << "Days: " << durDays << endl;
-	cout << "Hours: " << durHours << endl;
-	cout << "Minutes: " << durMinutes << endl;
-	cout << "Seconds: " << durSeconds << endl;
-	cout << "Destination Directory: " << destDir << endl;
-	cout << "Test image size (bytes): " << testImageSize << endl;
-	cout << "A total of " << numPictures << " pictures will be taken over " << duration << " seconds." << endl;
-	cout << "This might take up around " << estimatedTotalSize << " bytes of disk space." << endl;
-//	cout << "You have " << diskSpaceFree << " bytes of disk space free." << endl;
+	// Info
+	cout << "Taking a photo every " << timeout << " seconds over the course of:" << endl;
+	if (durDays > 0)
+		cout << durDays << " days, ";
+	if (durHours > 0)
+		cout << durHours << " hours, ";
+	if (durMinutes > 0)
+		cout << durMinutes << " minutes, ";
+	if (durSeconds > 0)
+		cout << durSeconds << " seconds";
+	cout << endl;
+	cout << numPictures << " will be taken in total, using an estimate of " << estimatedTotalSize << " bytes of disk space." << endl;
 
 	// If they don't have enough space, display a warning
 	if (estimatedTotalSize > diskSpaceFree) {
@@ -295,9 +296,11 @@ int main(int argc, char *argv[]) {
 		endTimelapse(EXIT_FAILURE);
 	}
 
+
 	/*== Start the capture? ==*/
 	cout << endl << "Press Enter to start or ^C to quit." << endl;
 	cin.get();
+
 
 	/*== Main "loop" ==*/
 	alarm(timeout);
