@@ -170,9 +170,11 @@ int main(int argc, char *argv[]) {
 	}
 
 	
-	// TODO: take a picture and estimate if there is enough space
-	// TODO: add all signal handlers
-
+	// TODO take a picture and estimate if there is enough space
+	// 		Let the user decice to continue or not
+	// TODO add all signal handlers
+	// TODO Ask for confirmation before starting
+	//      remove directory he says no.
 
 	
 	// Stats

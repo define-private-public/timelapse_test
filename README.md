@@ -30,7 +30,8 @@ Usage
 
 If any of the parameters are invalid or there is some sort of error, the
 timelapse program will exit with a message.  At any time to stop the program
-send an interrupt, terminate, or quit signal.
+send an interrupt, terminate, or quit signal.  The program will also stop when
+the capture is complete, or if the user runs out of disk space.
 
 This program assumes that you have only one webcam isntalled, and will use the
 "default," one that OpenCV will go to.  If anyone wants support for multiple
