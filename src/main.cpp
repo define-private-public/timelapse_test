@@ -11,8 +11,8 @@
 #include <cerrno>
 
 #include <unistd.h>
-#include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 
 
 // Definitions
@@ -24,6 +24,8 @@
 #define MAX_MINUTES 59
 #define MAX_SECONDS 59
 #define RWX_PERMS 0777
+#define DEFAULT_CAMERA 0
+#define TEST_IMAGE_FILENAME "test.jpg"
 
 
 // Namespaces
@@ -40,10 +42,15 @@ using namespace std;
 
 int main(int argc, char *argv[]) {
 	// Variables needed
+	struct stat st;
 	unsigned long timeout, duration;
 	unsigned short durDays, durHours, durMinutes, durSeconds;
 	const char *destDir;
+	unsigned int testImageSize;
+	char *savedImagePath= NULL;
 	int n;
+	cv::VideoCapture camera;
+	cv::Mat image;
 
 	// Welcome message
 	cout << "Capture a timelapse!" << endl;
@@ -57,11 +64,12 @@ int main(int argc, char *argv[]) {
 	}
 
 	// Make sure timeout is greater than zero
-	if (atoi(argv[ARG_TIMEOUT]) <= 0) {
+	n = atoi(argv[ARG_TIMEOUT]);
+	if (n <= 0) {
 		cerr << "<timeout> value is negative, need a positive integer." << endl;
 		exit(1);
 	} else
-		timeout = atoi(argv[ARG_TIMEOUT]);
+		timeout = n;
 
 	// Read the duration string
 	n = sscanf(argv[ARG_DURATION], "%hu:%hu:%hu:%hu", &durDays, &durHours, &durMinutes, &durSeconds);
@@ -122,8 +130,47 @@ int main(int argc, char *argv[]) {
 		exit(1);
 	}
 
+	// Allocate enough space for the image filepath buffer
+	savedImagePath = new char[strlen(destDir) + 32];		// Should be more than enough
+
+
+
+	/*== Last minute checks ==*/
+	// Open up the camera
+	camera.open(DEFAULT_CAMERA);
+
+	// Check that the opening was successful
+	if (camera.isOpened()) {
+		// Make a capture so we can estimate the amount of filespace needed.
+		camera.read(image);
+		if (!image.empty()) {
+			// First save the image to the disk
+			sprintf(savedImagePath, "%s/%s", destDir, TEST_IMAGE_FILENAME);
+			cv::imwrite(savedImagePath, image);
+
+			// Use the stat fuction to get the size
+			stat(savedImagePath, &st);
+			testImageSize = st.st_size;
+
+			// Delete the test image
+			n = unlink(savedImagePath);
+			if (n == -1) {
+				// don't exit, just print a warning
+				cout << "Warning, wasn't able to delete test image.  Reason(" << errno << "): " << strerror(errno) << endl;
+			}
+		} else {
+			cerr << "Was able to open the camera but not able to capture an image." << endl;
+			exit(1);
+		}
+		
+		image.release();
+	} else {
+		cerr << "Was not able to open the camera." << endl;
+		exit(1);
+	}
+
 	
-	// TODO: take a picture and make sure there is enough space
+	// TODO: take a picture and estimate if there is enough space
 	// TODO: add all signal handlers
 
 
@@ -135,8 +182,10 @@ int main(int argc, char *argv[]) {
 	cout << "Minutes: " << durMinutes << endl;
 	cout << "Seconds: " << durSeconds << endl;
 	cout << "Destination Directory: " << destDir << endl;
+	cout << "Test image size (bytes): " << testImageSize << endl;
 
-
+	
+	delete savedImagePath;
 	return 0;
 }
 
