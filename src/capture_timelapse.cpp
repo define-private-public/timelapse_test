@@ -34,27 +34,92 @@
 using namespace std;
 
 
-/*== Function prototypes ==*/
+/*== Variables int the global scope ==*/
+static unsigned long timeout, duration;
+static const char *destDir;
+static unsigned int testImageSize, numPictures, numTaken;
+static char *savedImagePath= NULL;
+static cv::VideoCapture camera;
+static cv::Mat image;
 
+
+/*== Function prototypes ==*/
+static void shutdownHandler(int sig);
+static void alarmHandler(int sig);
+void endTimelapse(int exitReason);
 
 
 /*== Function definitions ==*/
+// SIGINT, SIGTERM, and SIGQUIT are intercepted here
+static void shutdownHandler(int sig) {
+	// Gracefully shutdown the program
+	cout << "Recieved signal(" << sig << "): " << strsignal(sig) << endl;
+	cout << "Shuting down application." << endl;
+
+	endTimelapse(EXIT_SUCCESS);
+}
+
+
+// Take a picture and save it on an alarm signal(SIGALRM), then generate a new one
+static void alarmHandler(int sig) {
+	time_t captureTime;
+	bool imageWritten = false;
+
+	// Take the picture
+	numTaken++;
+	cout << "Taking picture number " << numTaken << ":" << endl;
+	captureTime = time(NULL);
+	camera.read(image);
+
+	// Chekc for emptyness
+	if (!image.empty()) {
+		// Save the image
+		sprintf(savedImagePath, "%s/%lli.jpg", destDir, (long long)captureTime);
+		imageWritten = cv::imwrite(savedImagePath, image);
+
+		// Double check
+		if (imageWritten)
+			cout << "  Saved to \"" << savedImagePath << "\"" << endl;
+		else {
+			cerr << "ERROR: Could not save image to \"" << savedImagePath << "\", ending timelapse." << endl;
+			endTimelapse(EXIT_FAILURE);
+		}
+	} else {
+		// Image was empty?  shutdown (or possibly continue on, still haven't decided yet
+		cerr << "  Image was empty, ending timelapse." << endl;
+		endTimelapse(EXIT_FAILURE);
+	}
+
+	// Re-setup the alarm to go off
+	alarm(timeout);
+}
+
+
+// Releases all OpenCV resources, frees memeory, and write statistics
+// For this, function we assume that all global variables have been initialized/allocated; will terminate program as well
+void endTimelapse(int exitReason) {
+	// The cleanup
+	camera.release();
+	image.release();
+	delete savedImagePath;
+
+	// TODO Stats information
+
+	exit(exitReason);
+}
 
 
 
+
+// Main program 
 int main(int argc, char *argv[]) {
 	// Variables needed
 	struct stat st;
 	struct statvfs vfs;
-	unsigned long timeout, duration;
+	struct sigaction shutdownAction, alarmAction;
 	unsigned short durDays, durHours, durMinutes, durSeconds;
-	const char *destDir;
-	unsigned int testImageSize, numPictures;
 	unsigned long long diskSpaceFree, estimatedTotalSize;
-	char *savedImagePath= NULL;
 	int n;
-	cv::VideoCapture camera;
-	cv::Mat image;
 
 	// Welcome message
 	cout << "Capture a timelapse!" << endl;
@@ -193,21 +258,7 @@ int main(int argc, char *argv[]) {
 	} else
 		diskSpaceFree = vfs.f_bsize * vfs.f_bfree;	// Success, multipy free blocks times block size
 
-	// If they don't have enough space, display a warning
-	if (estimatedTotalSize > diskSpaceFree) {
-		// TODO Add something here asking the user if they want to contiue
-		cout << "WARNING: You might not have enough free disk space for the timelapse." << endl;
-		cout << "         You need about " << (estimatedTotalSize - diskSpaceFree) << " more bytes of free space." << endl;
-	}
 
-
-	
-	// TODO add all signal handlers
-	// TODO Ask for confirmation before starting
-	//      remove directory he says no.
-	// TODO print statistics at end of capturing
-
-	
 	// Stats
 	cout << "Timeout (seconds): " << timeout << endl;
 	cout << "Days: " << durDays << endl;
@@ -220,8 +271,51 @@ int main(int argc, char *argv[]) {
 	cout << "This might take up around " << estimatedTotalSize << " bytes of disk space." << endl;
 //	cout << "You have " << diskSpaceFree << " bytes of disk space free." << endl;
 
-	
-	delete savedImagePath;
+	// If they don't have enough space, display a warning
+	if (estimatedTotalSize > diskSpaceFree) {
+		cout << "WARNING: You might not have enough free disk space for the timelapse." << endl;
+		cout << "         You need about " << (estimatedTotalSize - diskSpaceFree) << " more bytes of free space." << endl;
+	}
+
+	/*== Add the signal handlers ==*/
+	// Setup the signal actions
+	sigemptyset(&shutdownAction.sa_mask);
+	sigemptyset(&alarmAction.sa_mask);
+	shutdownAction.sa_handler = shutdownHandler;
+	alarmAction.sa_handler = alarmHandler;
+
+	// Set the signals, sigaction() returns either 0 or -1, we can use it here
+	n = sigaction(SIGINT, &shutdownAction, NULL);
+	n += sigaction(SIGTERM, &shutdownAction, NULL);
+	n += sigaction(SIGQUIT, &shutdownAction, NULL);
+	n += sigaction(SIGALRM, &alarmAction, NULL);
+	if (n != 0){
+		cerr << "Could not setup signals, shutting down." << endl;
+		endTimelapse(EXIT_FAILURE);
+	}
+
+	/*== Start the capture? ==*/
+	cout << endl << "Press Enter to start or ^C to quit." << endl;
+	cin.get();
+
+	/*== Main "loop" ==*/
+	alarm(timeout);
+	if (camera.isOpened()) {
+		cout << "Capturing images..." << endl;
+		numTaken = 0;
+
+		// Have to do this because of my webcamera, there will be dark photos unless reads are constantly made
+		while (numTaken < numPictures) {
+			camera.read(image);
+			image.release();
+		}
+	} else {
+		cerr << "Was not able to open the camera during the capture phase." << endl;
+		exit(1);
+	}
+
+	// Finishing things
+	endTimelapse(EXIT_SUCCESS);
 	return 0;
 }
 
