@@ -47,7 +47,7 @@ A text file called `info.txt` will be left in `<destination>` with some
 information about the timelapse capture.
 
 If you want to compile the images into a film, a small bash script called
-`compileToMove.sh` is provided in the `./src/` directory.  It requires `ffmpeg`
+`compileToMovie.sh` is provided in the `./src/` directory.  It requires `ffmpeg`
 to be installed. 
 
 Folder Description
