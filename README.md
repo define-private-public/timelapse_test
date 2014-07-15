@@ -46,6 +46,10 @@ is not enough space detected on the disk for all of the images.
 A text file called `info.txt` will be left in `<destination>` with some
 information about the timelapse capture.
 
+If you want to compile the images into a film, a small bash script called
+`compileToMove.sh` is provided in the `./src/` directory.  It requires `ffmpeg`
+to be installed. 
+
 Folder Description
 ------------------
  * `./toybox/` is just a little place where I tinker with code.  Some of it may
