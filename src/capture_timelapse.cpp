@@ -39,7 +39,7 @@ using namespace std;
 /*== Variables int the global scope ==*/
 static unsigned long timeout, duration;
 static const char *destDir;
-static unsigned int testImageSize, numPictures, numTaken;
+static unsigned int numPictures, numTaken;
 static unsigned short durDays, durHours, durMinutes, durSeconds;
 static char *savedImagePath= NULL;
 static cv::VideoCapture camera;
@@ -148,7 +148,7 @@ void endTimelapse(int exitReason) {
 	exit(exitReason);
 }
 
-
+// TODO Split up some of these functions into a fewer different files maybe
 
 
 // Main program 
@@ -157,6 +157,7 @@ int main(int argc, char *argv[]) {
 	struct stat st;
 	struct statvfs vfs;
 	struct sigaction shutdownAction, alarmAction;
+	unsigned int testImageSize;
 	unsigned long long diskSpaceFree, estimatedTotalSize;
 	int n;
 
