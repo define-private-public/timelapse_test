@@ -2,6 +2,7 @@
 
 // Includes
 #include <iostream>
+#include <fstream>
 #include <opencv2/opencv.hpp>		// Using C++ version of OpenCV
 #include <cstdlib>
 #include <cstdio>
@@ -14,6 +15,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/statvfs.h>
+#include <dirent.h>
 
 
 // Definitions
@@ -100,13 +102,49 @@ static void alarmHandler(int sig) {
 // Releases all OpenCV resources, frees memeory, and write statistics
 // For this, function we assume that all global variables have been initialized/allocated; will terminate program as well
 void endTimelapse(int exitReason) {
+	// Variables for statistics
+	ofstream statsFile;
+	DIR *dir;
+	struct dirent *dirFiles;
+	struct stat imgStat;
+	unsigned long meanImgSize = 0;
+	unsigned long long totalDiskSpace = 0;
+
 	// The cleanup
 	camera.release();
 	image.release();
+
+	// Just some statistical information
+	sprintf(savedImagePath, "%s/stats.txt", destDir);	// improper reuse of varible here, being a bad boy
+	statsFile.open(savedImagePath, ofstream::trunc);
+
+	if (statsFile.is_open()) {
+		// Loop over all of the iamges to get some info, assume we can poll the directory (no error checking)
+		dir = opendir(destDir);
+		while ((dirFiles = readdir(dir)) != NULL) {
+			sprintf(savedImagePath, "%s/%s", destDir, dirFiles->d_name);
+			if (stat(savedImagePath, &imgStat) == 0)
+				totalDiskSpace += imgStat.st_size;
+		}
+
+		// Write some statistics
+		statsFile << "Took " << numTaken << " pictures every " << timeout << " seconds." << endl;
+		statsFile << "Duraiton: " << endl;
+		statsFile << "  " << durDays << " days" << endl;
+		statsFile << "  " << durHours << " hours" << endl;
+		statsFile << "  " <<  durMinutes << " minutes" << endl;
+		statsFile << "  " << durSeconds << " seconds" << endl;
+		statsFile << totalDiskSpace << " bytes of disk space used." << endl;
+		if (numTaken > 0)
+			statsFile << "Average size of an image is " << (totalDiskSpace / numTaken) << " bytes." << endl;
+
+		statsFile.close();
+		
+	} else
+		cerr << "Could not write down any statistics about the timelapse." << endl;
+
+	// Bit more cleanup
 	delete savedImagePath;
-
-	// TODO Stats information
-
 	exit(exitReason);
 }
 
