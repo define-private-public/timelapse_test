@@ -148,7 +148,8 @@ void endTimelapse(int exitReason) {
 	exit(exitReason);
 }
 
-// TODO Split up some of these functions into a fewer different files maybe
+
+
 
 
 // Main program 
@@ -163,6 +164,7 @@ int main(int argc, char *argv[]) {
 
 	// Welcome message
 	cout << "Capture a timelapse!" << endl;
+
 
 	/*== Check the arguements ==*/
 	// Make sure we have enough arguments
@@ -252,7 +254,6 @@ int main(int argc, char *argv[]) {
 	savedImagePath = new char[strlen(destDir) + 32];		// Should be more than enough
 
 
-
 	/*== Last minute checks ==*/
 	// Open up the camera
 	camera.open(DEFAULT_CAMERA);
@@ -298,7 +299,6 @@ int main(int argc, char *argv[]) {
 	} else
 		diskSpaceFree = vfs.f_bsize * vfs.f_bfree;	// Success, multipy free blocks times block size
 
-
 	// Info
 	cout << "Taking a photo every " << timeout << " seconds over the course of:" << endl;
 	if (durDays > 0)
@@ -317,6 +317,7 @@ int main(int argc, char *argv[]) {
 		cout << "WARNING: You might not have enough free disk space for the timelapse." << endl;
 		cout << "         You need about " << (estimatedTotalSize - diskSpaceFree) << " more bytes of free space." << endl;
 	}
+
 
 	/*== Add the signal handlers ==*/
 	// Setup the signal actions
@@ -347,11 +348,11 @@ int main(int argc, char *argv[]) {
 		cout << "Capturing images..." << endl;
 		numTaken = 0;
 
-		// Have to do this because of my webcamera, there will be dark photos unless reads are constantly made
+		// Loop until we've taken all of the pictures
 		while (numTaken < numPictures) {
-//			camera.read(image);
+//			camera.read(image);		// Leaving these in for reasons
 //			image.release();
-			usleep(10);		// Take a little nap
+			usleep(10);				// Take a little nap
 		}
 	} else {
 		cerr << "Was not able to open the camera during the capture phase." << endl;
