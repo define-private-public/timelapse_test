@@ -48,7 +48,8 @@ information about the timelapse capture.
 
 If you want to compile the images into a film, a small bash script called
 `mkfilm.sh` is provided in the `./src/` directory.  It requires `ffmpeg` to be
-installed. 
+installed.   I would suggest reading the comments in the header of the script so
+you know how it works.
 
 Folder Description
 ------------------

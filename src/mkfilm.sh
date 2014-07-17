@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 # A small little utility script to compile the images to a movie using ffmpeg
+# This program will rename all of the images in a directory, run them through
+# ffmpeg, then restore them to their original names.  If you need to stop the
+# script, just send the interrupt signal (^C) and it still should rename them.
 
 # Usage:
 #  ./mkfilm <images_directoy> <film_filename> <framerate>
@@ -13,7 +16,7 @@
 #  ./mkfilm emerald/ emerald.mp4 24
 #  ./mkfilm sapphire/ sapphire.webm 30
 #
-#
+# Description:
 
 # Make sure we have enough arguemnts
 if [ $# -lt 3 ]; then
