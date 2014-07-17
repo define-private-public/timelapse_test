@@ -2,30 +2,50 @@
 # A small little utility script to compile the images to a movie using ffmpeg
 
 # Usage:
-#  ./mkfilm <images_directoy> <film_filename>
+#  ./mkfilm <images_directoy> <film_filename> <framerate>
 #
 #  <images_directory> -- Where all the images from your timelapse are stored.
 #                        Will only look for .jpg images.
 #  <file_filename> -- Where to save the film to and what filename.
+#  <framerate> -- How many images to show per second
 #
 # Examples:
-#  ./mkfilm emerald/ emerald.mp4
-#  ./mkfilm sapphire/ sapphire.webm
+#  ./mkfilm emerald/ emerald.mp4 24
+#  ./mkfilm sapphire/ sapphire.webm 30
 #
 #
 
 # Make sure we have enough arguemnts
-if [ $# -lt 2 ]; then
+if [ $# -lt 3 ]; then
 	echo "Not enough arguemnts."
 	echo "Usage:"
-	echo "./mkfilm <images_directory> <film_filename>"
+	echo "./mkfilm <images_directory> <film_filename> <framerate>"
 	exit 0
+fi
+
+# Make sure that ffmpeg is installed
+command -v ffmpeg
+if [ $? -ne 0 ]; then
+	echo "ffmpeg is not installed."
+	exit 1
 fi
 
 # Argument values
 imagesDir=$1
 filmName=$2
+framerate=$3
 jpgFiles=
+
+
+# Have to define this function here
+# Restore the image files to their correct names
+restore_filenames() {
+	# Re-rename the images
+	for i in ${!images[@]}; do
+		mv ${images[$i]} $i
+	done
+}
+
 
 # Check that the directory exists and then do all of the re-naming
 if [ -d $imagesDir ]; then
@@ -42,13 +62,17 @@ if [ -d $imagesDir ]; then
 		for f in $imagesDir/*.jpg; do
 			newId=$(printf "%0${#numFiles}d" $n)
 			images[$f]="$imagesDir/${newId}.jpg"
+			mv $f ${images[$f]}
 			((n++))
 		done
 
-		for i in "${!images[@]}"; do
-			echo "$i -> ${images[$i]}"
-		done
+		# Incase the user sends the interrupt signal, rename the files
+		trap 'restore_filenames; exit 1' INT
 
+		# Compile the film, rename, then exit
+		ffmpeg -i $imagesDir/%${#numFiles}d.jpg -r $framerate $filmName
+		restore_filenames
+		exit 0
 	else
 		# Was not able to find a single jpeg, just exit
 		echo "Couldn't find .jpg files"
@@ -58,4 +82,5 @@ else
 	echo "\"$imagesDir\" is not a valid directory."
 	exit 1
 fi
+
 
